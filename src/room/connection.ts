@@ -22,7 +22,11 @@ function connect(roomId: string) {
   }
 }
 
-export type Hub = { leave: () => void }
+export type Hub = {
+  /** Apply a message from the Facilitator themself. */
+  send: (message: Message) => void
+  leave: () => void
+}
 
 /** Run the Room as its Facilitator. `onChange` fires with every new state. */
 export function hostRoom(roomId: string, initial: RoomState, onChange: (state: RoomState) => void): Hub {
@@ -62,12 +66,19 @@ export function hostRoom(roomId: string, initial: RoomState, onChange: (state: R
     if (!stillHere) update(apply(state, { type: 'leave' }, participantId))
   })
 
-  return { leave: () => void room.leave() }
+  return {
+    send: (message) => update(apply(state, message, state.facilitatorId)),
+    leave: () => void room.leave(),
+  }
 }
 
 export type ParticipantStatus = 'connecting' | 'connected' | 'unreachable'
 
-export type ParticipantConnection = { leave: () => void }
+export type ParticipantConnection = {
+  /** Send a message to the Facilitator. Dropped while the Room is unreachable. */
+  send: (message: Message) => void
+  leave: () => void
+}
 
 /** Join a Room as a Participant. Reconnects by itself when the Facilitator comes back. */
 export function joinAsParticipant(
@@ -103,6 +114,9 @@ export function joinAsParticipant(
   })
 
   return {
+    send: (message) => {
+      if (hubPeerId) void toHub.send({ participantId, message }, { target: hubPeerId })
+    },
     leave: () => {
       clearTimeout(timer)
       void room.leave()

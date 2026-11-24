@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { viewFor, type Activity, type RoomView } from './room/room'
+  import { viewFor, type Activity, type Message, type RoomView } from './room/room'
+  import FistOfFive from './FistOfFive.svelte'
   import { hostRoom, joinAsParticipant, type ParticipantStatus } from './room/connection'
   import { ACTIVITY_NAMES, roomLink } from './lib/route'
   import {
@@ -26,6 +27,7 @@
   let name = $state(savedDisplayName())
   let joining = $state(!isFacilitator && hasJoined(roomId) && savedDisplayName() !== '')
   let copied = $state(false)
+  let send: (message: Message) => void = () => {}
 
   const link = roomLink(stored?.activity ?? activity, roomId)
 
@@ -36,6 +38,7 @@
       saveRoomState(roomId, state)
       view = viewFor(state, myId)
     })
+    send = hub.send
     return hub.leave
   })
 
@@ -49,6 +52,7 @@
       (v) => (view = v),
       (s) => (status = s),
     )
+    send = connection.send
     return connection.leave
   })
 
@@ -97,6 +101,10 @@
     The Room is unreachable: the Facilitator may have left or your network may block peer-to-peer
     connections. We will reconnect automatically if they come back.
   </p>
+{/if}
+
+{#if view?.activity === 'fist' && (isFacilitator || status === 'connected')}
+  <FistOfFive vote={view.vote} {isFacilitator} send={(m) => send(m)} />
 {/if}
 
 {#if view}
