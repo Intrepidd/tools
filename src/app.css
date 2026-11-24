@@ -1,4 +1,10 @@
 :root {
+  /* The five-value house palette, low (warm) to high (the app's green). */
+  --value-1: #e4572e;
+  --value-2: #f3a712;
+  --value-3: #e9c46a;
+  --value-4: #76b041;
+  --value-5: #2a9d8f;
   font-family: system-ui, sans-serif;
   line-height: 1.5;
   color: #1d1d1f;

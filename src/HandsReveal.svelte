@@ -60,11 +60,11 @@
   }
 
   /* One tint per value, low (warm) to high (the app's green). */
-  .v1 { --c: #e4572e; }
-  .v2 { --c: #f3a712; }
-  .v3 { --c: #e9c46a; }
-  .v4 { --c: #76b041; }
-  .v5 { --c: #2a9d8f; }
+  .v1 { --c: var(--value-1); }
+  .v2 { --c: var(--value-2); }
+  .v3 { --c: var(--value-3); }
+  .v4 { --c: var(--value-4); }
+  .v5 { --c: var(--value-5); }
 
   .hand {
     position: absolute;

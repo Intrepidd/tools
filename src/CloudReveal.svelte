@@ -53,11 +53,11 @@
   }
 
   /* The house palette, darkened a little so light tints stay readable on the page. */
-  .c0 { --c: #2a9d8f; }
-  .c1 { --c: #e4572e; }
-  .c2 { --c: #76b041; }
-  .c3 { --c: #f3a712; }
-  .c4 { --c: #e9c46a; }
+  .c0 { --c: var(--value-5); }
+  .c1 { --c: var(--value-1); }
+  .c2 { --c: var(--value-4); }
+  .c3 { --c: var(--value-2); }
+  .c4 { --c: var(--value-3); }
 
   text {
     fill: color-mix(in srgb, var(--c) 78%, #222);
