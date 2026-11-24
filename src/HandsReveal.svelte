@@ -18,15 +18,13 @@
       class="hand v{hand.value}"
       style:left="{spot.x}%"
       style:top="{spot.y}%"
-      style:--dx="{50 - spot.x}cqw"
-      style:--dy="{50 - spot.y}cqw"
       style:--delay="{i * stagger}ms"
       style:--float-delay="{-((i * 1.7) % 6)}s"
       style:--float-duration="{5 + (i % 3)}s"
     >
       <div class="float">
         <div class="art"><Hand value={hand.value} /></div>
-        <span class="name" title={hand.name}>{hand.name}</span>
+        <span class="pill" title={hand.name}>{hand.name}</span>
       </div>
     </div>
   {/each}
@@ -62,11 +60,11 @@
   }
 
   /* One tint per value, low (warm) to high (the app's green). */
-  .v1 { --c: #b9472f; }
-  .v2 { --c: #d07a2d; }
-  .v3 { --c: #b8901f; }
-  .v4 { --c: #5f8f4e; }
-  .v5 { --c: #2f5d50; }
+  .v1 { --c: #e4572e; }
+  .v2 { --c: #f3a712; }
+  .v3 { --c: #e9c46a; }
+  .v4 { --c: #76b041; }
+  .v5 { --c: #2a9d8f; }
 
   .hand {
     position: absolute;
@@ -74,9 +72,9 @@
     height: calc(var(--size) * 1cqw);
     margin: 0;
     translate: -50% -50%;
-    --hand-ink: var(--c);
-    --hand-fill: color-mix(in srgb, var(--c) 14%, #fffaf3);
-    animation: enter 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay) both;
+    --hand-ink: color-mix(in srgb, var(--c) 70%, #222);
+    --hand-fill: color-mix(in srgb, var(--c) 22%, #fff);
+    animation: pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--delay) both;
   }
 
   .float {
@@ -90,17 +88,21 @@
   .art {
     flex: 1;
     min-height: 0;
-    width: 78%;
+    aspect-ratio: 1;
   }
 
-  .name {
-    max-width: 100%;
+  .pill {
+    max-width: 120%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: clamp(0.65rem, calc(var(--size) * 0.14cqw), 1rem);
-    font-weight: 600;
-    line-height: 1.3;
+    padding: 0.1em 0.6em;
+    border-radius: 999px;
+    background: var(--c);
+    color: #fff;
+    font-size: clamp(0.6rem, calc(var(--size) * 0.12cqw), 0.95rem);
+    font-weight: 700;
+    line-height: 1.4;
   }
 
   .center {
@@ -172,19 +174,16 @@
     font-weight: 700;
   }
 
-  @keyframes enter {
+  @keyframes pop {
     from {
       opacity: 0;
-      transform: translate(var(--dx), var(--dy)) scale(0.3);
+      scale: 0;
+      rotate: -25deg;
     }
   }
   @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0) rotate(0deg);
-    }
     50% {
-      transform: translateY(-1.2cqw) rotate(1.5deg);
+      transform: translateY(-1cqw) rotate(-3deg);
     }
   }
   @keyframes fade {
