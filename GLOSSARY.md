@@ -38,8 +38,12 @@ _Avoid_: Score, rating, ballot
 
 ## Word Cloud
 
+**Round**:
+One cycle of Word Cloud: an optional Prompt, the Entries Participants submit, then a Reveal. Only one Round is open at a time.
+_Avoid_: Session, poll
+
 **Prompt**:
-The optional question that starts a Word Cloud round.
+The optional question that starts a Round.
 _Avoid_: Topic, question
 
 **Entry**:
