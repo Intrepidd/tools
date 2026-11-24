@@ -1,5 +1,5 @@
 <script lang="ts">
-  /** A Hand showing `value` (1–5) raised fingers: index, middle, ring, pinky, then thumb. */
+  /** A Hand showing `value` (0–5) raised fingers: index, middle, ring, pinky, then thumb. 0 is a fist. */
   const { value }: { value: number } = $props()
 
   // Index, middle, ring, pinky: horizontal position and how high the raised fingertip reaches.
@@ -13,6 +13,17 @@
   const fingers = $derived(FINGERS.map((f, i) => ({ x: f.x, top: value > i ? f.top : 46 })))
 </script>
 
+{#if value === 0}
+<svg viewBox="0 0 100 100" role="img" aria-label="a fist">
+  <!-- Front view: curled fingers on top, the thumb laid across them. -->
+  <rect x="24" y="50" width="56" height="42" rx="16" class="palm" />
+  <rect x="27" y="30" width="14" height="30" rx="7" class="palm" />
+  <rect x="39" y="26" width="14" height="32" rx="7" class="palm" />
+  <rect x="51" y="28" width="14" height="31" rx="7" class="palm" />
+  <rect x="63" y="33" width="14" height="27" rx="7" class="palm" />
+  <rect x="20" y="58" width="46" height="15" rx="7.5" transform="rotate(-12 43 65)" class="palm" />
+</svg>
+{:else}
 <!-- Fingers are stroked twice (ink, then fill on top of the palm) so they merge cleanly into it. -->
 <svg viewBox="0 0 100 100" role="img" aria-label="{value} {value === 1 ? 'finger' : 'fingers'}">
   <g stroke-linecap="round">
@@ -33,6 +44,7 @@
     {/if}
   </g>
 </svg>
+{/if}
 
 <style>
   svg {

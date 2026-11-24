@@ -112,9 +112,14 @@ describe('Fist of Five', () => {
     expect(viewFor(state, 'p-2').vote?.myValue).toBeNull()
   })
 
-  it('rejects values outside 1 to 5 and answers with no open Vote', () => {
+  it('accepts a fist (0) as an answer', () => {
+    const state = apply(openVote(), { type: 'answer', value: 0 }, 'p-1')
+    expect(viewFor(state, 'p-1').vote?.myValue).toBe(0)
+  })
+
+  it('rejects values outside 0 to 5 and answers with no open Vote', () => {
     let state = apply(openVote(), { type: 'answer', value: 3 }, 'p-1')
-    for (const value of [0, 6, 2.5, '3', null]) {
+    for (const value of [-1, 6, 2.5, '3', null]) {
       state = apply(state, { type: 'answer', value } as never, 'p-1')
     }
     expect(viewFor(state, 'p-1').vote?.myValue).toBe(3)
@@ -163,19 +168,19 @@ describe('Fist of Five', () => {
     expect(who(progress?.answered)).toEqual(['Paul'])
   })
 
-  it('reveals every Hand with its name, the average and the 1-5 distribution, even with missing answers', () => {
+  it('reveals every Hand with its name, the average and the 0-5 distribution, even with missing answers', () => {
     let state = apply(openVote(), { type: 'answer', value: 4 }, 'p-1')
-    state = apply(state, { type: 'answer', value: 1 }, FACILITATOR)
+    state = apply(state, { type: 'answer', value: 0 }, FACILITATOR)
     state = apply(state, { type: 'reveal' }, FACILITATOR)
 
     for (const viewer of [FACILITATOR, 'p-1', 'p-2']) {
       const vote = viewFor(state, viewer).vote
       expect(vote?.revealed).toBe(true)
       expect(hands(vote?.results)).toEqual([
-        { name: 'Fiona', value: 1 },
+        { name: 'Fiona', value: 0 },
         { name: 'Paul', value: 4 },
       ])
-      expect(vote?.results).toMatchObject({ average: 2.5, distribution: [1, 0, 0, 1, 0] })
+      expect(vote?.results).toMatchObject({ average: 2, distribution: [1, 0, 0, 0, 1, 0] })
       expect(vote?.progress).toBeNull()
     }
   })
@@ -183,7 +188,7 @@ describe('Fist of Five', () => {
   it('reveals a Vote with no answers', () => {
     const state = apply(openVote(), { type: 'reveal' }, FACILITATOR)
 
-    expect(viewFor(state, 'p-1').vote?.results).toEqual({ hands: [], average: null, distribution: [0, 0, 0, 0, 0] })
+    expect(viewFor(state, 'p-1').vote?.results).toEqual({ hands: [], average: null, distribution: [0, 0, 0, 0, 0, 0] })
   })
 
   it('counts the Hand of a Participant who left before Reveal', () => {

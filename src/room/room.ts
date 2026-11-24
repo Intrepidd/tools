@@ -17,7 +17,7 @@ export const MAX_ENTRY_LENGTH = 30
 export const MAX_ENTRY_WORDS = 3
 
 /** The values a Hand can show, in order. */
-export const HAND_VALUES = [1, 2, 3, 4, 5] as const
+export const HAND_VALUES = [0, 1, 2, 3, 4, 5] as const
 
 type Participant = { name: string; connected: boolean }
 
@@ -53,7 +53,7 @@ type Entry = { id: number; author: string; text: string }
 type Vote = {
   question: string
   revealed: boolean
-  /** Values from 1 to 5, keyed by Participant ID. Secret until Reveal. */
+  /** Values from 0 (a fist) to 5, keyed by Participant ID. Secret until Reveal. */
   answers: Record<string, number>
 }
 

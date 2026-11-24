@@ -27,8 +27,8 @@ describe('roomNews', () => {
 
   it('announces a Vote starting and the Reveal coming', () => {
     const open = { question: 'Ready?', revealed: false, myValue: null, progress: null, results: null }
-    expect(roomNews(view(), view({ vote: open }), false).now).toEqual(['Vote started: Ready? Choose 1 to 5'])
-    const revealed = { ...open, revealed: true, results: { hands: [], average: null, distribution: [0, 0, 0, 0, 0] } }
+    expect(roomNews(view(), view({ vote: open }), false).now).toEqual(['Vote started: Ready? Choose 0 to 5'])
+    const revealed = { ...open, revealed: true, results: { hands: [], average: null, distribution: [0, 0, 0, 0, 0, 0] } }
     expect(roomNews(view({ vote: open }), view({ vote: revealed }), false).now).toEqual([
       'Revealing the hands',
     ])
@@ -64,10 +64,14 @@ describe('roomNews', () => {
 describe('summaries', () => {
   it('summarises a Vote', () => {
     const hands = [4, 4, 5, 2].map((value, key) => ({ key, name: `P${key}`, value }))
-    expect(voteSummary({ hands, average: 3.75, distribution: [0, 1, 0, 2, 1] })).toBe(
+    expect(voteSummary({ hands, average: 3.75, distribution: [0, 0, 1, 0, 2, 1] })).toBe(
       'Results: average 3.8 out of 5 from 4 votes. Most common: 4, 2 people',
     )
-    expect(voteSummary({ hands: [], average: null, distribution: [0, 0, 0, 0, 0] })).toBe(
+    const fists = [0, 0, 3].map((value, key) => ({ key, name: `P${key}`, value }))
+    expect(voteSummary({ hands: fists, average: 1, distribution: [2, 0, 0, 1, 0, 0] })).toBe(
+      'Results: average 1.0 out of 5 from 3 votes. Most common: 0 (fist), 2 people',
+    )
+    expect(voteSummary({ hands: [], average: null, distribution: [0, 0, 0, 0, 0, 0] })).toBe(
       'Results: nobody answered this Vote',
     )
   })

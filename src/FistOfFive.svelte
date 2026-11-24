@@ -23,7 +23,7 @@
     send: (m: Message) => void
   } = $props()
 
-  const HINTS = ['Not at all', 'Worried', 'Unsure', 'Confident', 'All in']
+  const HINTS = ['Block', 'Big concerns', 'Some concerns', 'Okay', 'Good', 'All in']
 
   let question = $state('')
   let counting = $state(false)
@@ -94,7 +94,7 @@
     </p>
 
     <fieldset class="values" class:has-pick={vote.myValue}>
-      <legend class="sr-only">Your value, from 1 (not at all) to 5 (all in)</legend>
+      <legend class="sr-only">Your value, from 0 (a fist, block) to 5 (all in)</legend>
       {#each HAND_VALUES as value (value)}
         <label class="value" class:picked={vote.myValue === value} style:--c="var(--value-{value})" style:--ink="var(--ink-{value})">
           <input
@@ -107,7 +107,7 @@
           />
           <span class="art" aria-hidden="true"><Hand {value} /></span>
           <span class="num">{value}</span>
-          <span class="hint">{HINTS[value - 1]}</span>
+          <span class="hint">{HINTS[value]}</span>
           <svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8.5l2.5 2.5L12 5.5" /></svg>
         </label>
       {/each}
@@ -164,7 +164,7 @@
     padding: 0;
     border: 0;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 12px;
   }
   .value {

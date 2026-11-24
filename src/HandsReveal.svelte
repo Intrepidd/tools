@@ -1,7 +1,7 @@
 <script lang="ts">
   import Hand from './Hand.svelte'
   import { placeHands } from './lib/handCircle'
-  import type { VoteResults } from './room/room'
+  import { HAND_VALUES, type VoteResults } from './room/room'
   import { Tween } from 'svelte/motion'
   import { cubicOut } from 'svelte/easing'
 
@@ -21,7 +21,7 @@
   // Starts at 0 and counts up; with reduced motion it jumps straight to the value.
   const average = new Tween(0, { duration: reducedMotion ? 0 : 900, easing: cubicOut })
   const byValue = $derived(
-    [1, 2, 3, 4, 5].map((v) => results.hands.filter((h) => h.value === v).map((h) => h.name)),
+    HAND_VALUES.map((v) => results.hands.filter((h) => h.value === v).map((h) => h.name)),
   )
   $effect(() => {
     const target = results.average ?? 0
@@ -70,10 +70,10 @@
     {/if}
     <ol class="bars">
       {#each results.distribution as count, i (i)}
-        <li class="v{i + 1}">
+        <li class="v{i}">
           <span class="count">{count}</span>
           <span class="bar" style:--fill={count / most} style:--i={i}></span>
-          <span class="value">{i + 1}</span>
+          <span class="value">{i}</span>
         </li>
       {/each}
     </ol>
@@ -87,7 +87,7 @@
     <thead><tr><th scope="col">Value</th><th scope="col">Votes</th><th scope="col">Who</th></tr></thead>
     <tbody>
       {#each byValue as names, i (i)}
-        <tr><th scope="row">{i + 1}</th><td>{names.length}</td><td>{names.join(', ') || '–'}</td></tr>
+        <tr><th scope="row">{i === 0 ? '0 (fist)' : i}</th><td>{names.length}</td><td>{names.join(', ') || '–'}</td></tr>
       {/each}
     </tbody>
   </table>
@@ -137,6 +137,7 @@
   }
 
   /* One tint per value, low (warm) to high (the app's green). */
+  .v0 { --c: var(--value-0); --ink: var(--ink-0); }
   .v1 { --c: var(--value-1); --ink: var(--ink-1); }
   .v2 { --c: var(--value-2); --ink: var(--ink-2); }
   .v3 { --c: var(--value-3); --ink: var(--ink-3); }

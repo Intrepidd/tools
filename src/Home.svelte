@@ -62,7 +62,7 @@
         {/each}
       </span>
       <span class="title">New Fist of Five</span>
-      <span class="desc" id="fist-desc" aria-hidden="true">Everyone rates 1 to 5 with a hand, then the hands appear in a circle</span>
+      <span class="desc" id="fist-desc" aria-hidden="true">Everyone rates 0 to 5 with a hand, from a fist to all fingers, then the hands appear in a circle</span>
     </button>
 
     <button type="button" class="card words" aria-describedby="cloud-desc" onclick={() => create('cloud')}>

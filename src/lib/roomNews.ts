@@ -34,7 +34,7 @@ export function roomNews(prev: RoomView | null, next: RoomView, isFacilitator: b
   const pv = prev.vote
   const nv = next.vote
   if (nv && !nv.revealed && (!pv || pv.revealed)) {
-    news.now.push(`${sentence(nv.question ? `Vote started: ${nv.question}` : 'Vote started')} Choose 1 to 5`)
+    news.now.push(`${sentence(nv.question ? `Vote started: ${nv.question}` : 'Vote started')} Choose 0 to 5`)
   }
   if (nv?.revealed && pv && !pv.revealed) news.now.push('Revealing the hands')
   if (isFacilitator && nv?.progress && pv?.progress) {
@@ -64,11 +64,11 @@ export function roomNews(prev: RoomView | null, next: RoomView, isFacilitator: b
 export function voteSummary(results: VoteResults): string {
   if (results.average === null) return 'Results: nobody answered this Vote'
   const top = Math.max(...results.distribution)
-  const values = results.distribution.flatMap((n, i) => (n === top ? [i + 1] : []))
+  const values = results.distribution.flatMap((n, value) => (n === top ? [value] : []))
   const n = results.hands.length
   return (
     `Results: average ${results.average.toFixed(1)} out of 5 from ${n} ${n === 1 ? 'vote' : 'votes'}. ` +
-    `Most common: ${list(values.map(String))}, ${top} ${top === 1 ? 'person' : 'people'}`
+    `Most common: ${list(values.map((v) => (v === 0 ? '0 (fist)' : String(v))))}, ${top} ${top === 1 ? 'person' : 'people'}`
   )
 }
 

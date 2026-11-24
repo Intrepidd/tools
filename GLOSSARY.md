@@ -29,7 +29,7 @@ _Avoid_: Show, publish, unveil
 ## Fist of Five
 
 **Vote**:
-One round of Fist of Five: an optional question that each Participant answers with a value from 1 to 5. Only one Vote is open at a time.
+One round of Fist of Five: an optional question that each Participant answers with a value from 0 (a fist) to 5. Only one Vote is open at a time.
 _Avoid_: Poll, round, question
 
 **Hand**:

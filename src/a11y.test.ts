@@ -65,7 +65,7 @@ describe('Home', () => {
 })
 
 describe('Fist of Five', () => {
-  it('offers the 1–5 choice as a named radio group', async () => {
+  it('offers the 0–5 choice as a named radio group', async () => {
     const send = vi.fn()
     const { container } = render(FistOfFive, {
       vote: openVote({ myValue: 4 }),
@@ -76,10 +76,11 @@ describe('Fist of Five', () => {
     })
     const group = screen.getByRole('group', { name: /Your value/ })
     const radios = within(group).getAllByRole('radio')
-    expect(radios).toHaveLength(5)
-    expect((radios[3] as HTMLInputElement).checked).toBe(true)
-    await fireEvent.click(radios[1])
-    expect(send).toHaveBeenCalledWith({ type: 'answer', value: 2 })
+    expect(radios).toHaveLength(6)
+    expect(radios[0].getAttribute('value')).toBe('0')
+    expect((radios[4] as HTMLInputElement).checked).toBe(true)
+    await fireEvent.click(radios[0])
+    expect(send).toHaveBeenCalledWith({ type: 'answer', value: 0 })
     expect(await axeViolations(container)).toEqual([])
   })
 
@@ -100,10 +101,10 @@ describe('Fist of Five', () => {
   it('gives the revealed Hands a heading, a summary and a full table', async () => {
     const hands = [
       { key: 1, name: 'Hugo', value: 4 },
-      { key: 2, name: 'Léa', value: 2 },
+      { key: 2, name: 'Léa', value: 0 },
     ]
     const { container } = render(FistOfFive, {
-      vote: openVote({ revealed: true, results: { hands, average: 3, distribution: [0, 1, 0, 1, 0] } }),
+      vote: openVote({ revealed: true, results: { hands, average: 2, distribution: [1, 0, 0, 0, 1, 0] } }),
       isFacilitator: false,
       participants: people,
       meKey: 1,
@@ -111,10 +112,11 @@ describe('Fist of Five', () => {
     })
     await tick()
     expect(screen.getByRole('heading', { name: 'Results' })).toBeTruthy()
-    expect(screen.getByText(/Average 3.0 out of 5 from 2 votes/)).toBeTruthy()
+    expect(screen.getByText(/Average 2.0 out of 5 from 2 votes/)).toBeTruthy()
     const rows = within(screen.getByRole('table')).getAllByRole('row')
-    expect(rows).toHaveLength(6) // header + one row per value, zeros included
-    expect(rows[4].textContent).toContain('Hugo')
+    expect(rows).toHaveLength(7) // header + one row per value 0–5, empty ones included
+    expect(rows[1].textContent).toContain('Léa')
+    expect(rows[5].textContent).toContain('Hugo')
     expect(container.querySelector('.stage')?.getAttribute('aria-hidden')).toBe('true')
     expect(await axeViolations(container)).toEqual([])
   })

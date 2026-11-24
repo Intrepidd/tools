@@ -20,7 +20,7 @@ A member of our team is blind and uses a screen reader. Every screen, Activity a
 9. Decorative SVG (hands on buttons and cards, icons) is `aria-hidden="true"`. Meaningful standalone SVG gets `role="img"` and a name.
 
 ### Controls and forms
-10. Use native elements: `<button>` for actions, `<a>` for navigation, radios in a `<fieldset>`/`<legend>` for single choice (the 1–5 picker). No `div` buttons, no positive `tabindex`.
+10. Use native elements: `<button>` for actions, `<a>` for navigation, radios in a `<fieldset>`/`<legend>` for single choice (the 0–5 picker). No `div` buttons, no positive `tabindex`.
 11. Every input has a visible `<label>`. Hints and errors are linked with `aria-describedby`, errors set `aria-invalid="true"` and keep focus in the field. Don't disable a submit button to signal invalid input: let it explain why.
 12. A button's accessible name stays stable while its visible text changes (e.g. "Copy invite link" → "Link copied"); confirm the result through the Announcer.
 

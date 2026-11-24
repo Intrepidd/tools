@@ -10,13 +10,15 @@
   /* Boundaries of controls (inputs, cards): at least 3:1 against every surface. */
   --edge: #857b6e;
 
-  /* The five-value pastel palette, low (coral) to high (mint), with a deep ink of each for text.
+  /* The six-value pastel palette, 0 (rose, a fist) to 5 (mint), with a deep ink of each for text.
      Pastels are fills only (1.2–1.5:1 on paper); every ink reaches 4.5:1 on every surface. */
+  --value-0: #f5b3c6;
   --value-1: #ffb8a8;
   --value-2: #ffd59e;
   --value-3: #f9e6a1;
   --value-4: #cfe8b4;
   --value-5: #a9dcc9;
+  --ink-0: #9c3555;
   --ink-1: #a8402c;
   --ink-2: #94570f;
   --ink-3: #7a6213;
