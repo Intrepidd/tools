@@ -11,6 +11,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "d3-cloud": "^2.0.0",
     "trystero": "^0.27.0"
   },
   "devDependencies": {

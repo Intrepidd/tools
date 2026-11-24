@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CloudReveal from './CloudReveal.svelte'
   import {
     MAX_ENTRY_LENGTH,
     MAX_ENTRY_WORDS,
@@ -26,11 +27,6 @@
     if (!valid) return
     send({ type: 'addEntry', text: entry })
     entry = ''
-  }
-
-  // Plain Reveal: font size grows with the count, from 1rem to 3rem.
-  function size(count: number, max: number): string {
-    return `${1 + (max > 1 ? (2 * (count - 1)) / (max - 1) : 0)}rem`
   }
 </script>
 
@@ -77,13 +73,7 @@
       {/if}
     {:else if round.cloud}
       {#if round.cloud.length}
-        <ul class="revealed">
-          {#each round.cloud as item (item.text)}
-            <li style:font-size={size(item.count, round.cloud[0].count)}>
-              {item.text}<span class="tag">{item.count}</span>
-            </li>
-          {/each}
-        </ul>
+        <CloudReveal cloud={round.cloud} />
       {:else}
         <p class="status">Nobody submitted an Entry.</p>
       {/if}
@@ -124,18 +114,5 @@
     padding: 0 0.5rem;
     background: transparent;
     color: #5c5c58;
-  }
-  .revealed {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.5rem 1.25rem;
-  }
-  .revealed li {
-    line-height: 1.2;
-    color: #2f5d50;
-    overflow-wrap: anywhere;
   }
 </style>
