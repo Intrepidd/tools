@@ -6,19 +6,22 @@
   --line: rgb(31 27 22 / 0.09);
   --text: #1f1b16;
   --text-2: #5e554a;
-  --muted: #7b7266;
+  --muted: #6b6256;
+  /* Boundaries of controls (inputs, cards): at least 3:1 against every surface. */
+  --edge: #857b6e;
 
-  /* The five-value pastel palette, low (coral) to high (mint), with a deep ink of each for text. */
+  /* The five-value pastel palette, low (coral) to high (mint), with a deep ink of each for text.
+     Pastels are fills only (1.2–1.5:1 on paper); every ink reaches 4.5:1 on every surface. */
   --value-1: #ffb8a8;
   --value-2: #ffd59e;
   --value-3: #f9e6a1;
   --value-4: #cfe8b4;
   --value-5: #a9dcc9;
-  --ink-1: #b84a35;
-  --ink-2: #b56e14;
-  --ink-3: #94761a;
-  --ink-4: #4f7d32;
-  --ink-5: #2a7c63;
+  --ink-1: #a8402c;
+  --ink-2: #94570f;
+  --ink-3: #7a6213;
+  --ink-4: #47712c;
+  --ink-5: #256f58;
   /* Extra pastels for people, so avatars don't read as votes. */
   --pastel-a: #d9cdf5;
   --pastel-b: #bfdcf6;
@@ -92,7 +95,7 @@ input {
   font: inherit;
   height: 48px;
   padding: 0 16px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--edge);
   border-radius: 12px;
   background: var(--surface);
   color: var(--text);
@@ -103,10 +106,8 @@ input::placeholder {
   color: var(--muted);
 }
 
-input:focus {
-  outline: none;
-  border-color: rgb(31 27 22 / 0.3);
-  box-shadow: 0 0 0 4px rgb(31 27 22 / 0.06);
+input:focus-visible {
+  border-color: var(--text);
 }
 
 button {
@@ -141,8 +142,22 @@ button.quiet {
 }
 
 :focus-visible {
-  outline: 2px solid var(--text);
+  outline: 3px solid var(--text);
   outline-offset: 2px;
+}
+
+/* Headings get focus programmatically after a view change; no ring for that. */
+[tabindex='-1']:focus:not(:focus-visible) {
+  outline: none;
+}
+
+input[aria-invalid='true'] {
+  border-color: var(--ink-1);
+}
+
+.error {
+  color: var(--ink-1);
+  font-size: 14px;
 }
 
 .label {

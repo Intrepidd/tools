@@ -7,6 +7,9 @@
   import { runRoomAsFacilitator, joinAsParticipant, type ParticipantStatus } from './room/connection'
   import { ACTIVITY_NAMES, roomLink } from './lib/route'
   import { tap } from './lib/juice'
+  import { alertNow, announce, announceSoon } from './lib/announcer.svelte'
+  import { roomNews } from './lib/roomNews'
+  import { tick } from 'svelte'
   import {
     hasJoined,
     loadRoomState,
@@ -30,11 +33,40 @@
   let name = $state(savedDisplayName())
   let joining = $state(!isFacilitator && hasJoined(roomId) && savedDisplayName() !== '')
   let copied = $state(false)
+  let copyFailed = $state(false)
+  let nameError = $state('')
   let send: (message: Message) => void = () => {}
 
   const activityName = ACTIVITY_NAMES[stored?.activity ?? activity]
   const link = roomLink(stored?.activity ?? activity, roomId)
   const connected = $derived(isFacilitator || status === 'connected')
+
+  // Tell screen readers what changed in the Room (docs/accessibility.md, rules 2–3).
+  let previous: RoomView | null = null
+  $effect(() => {
+    if (!view) return
+    const news = roomNews(previous, view, isFacilitator)
+    news.now.forEach(announce)
+    news.soon.forEach((n) => announceSoon(n.text, n.key))
+    previous = view
+  })
+
+  // Connection changes, for Participants.
+  let lastStatus: ParticipantStatus = 'connecting'
+  $effect(() => {
+    if (status === lastStatus) return
+    if (status === 'unreachable') alertNow('The Room is unreachable. This page reconnects on its own.')
+    else if (status === 'connected' && lastStatus === 'unreachable') announce('Reconnected to the Room')
+    lastStatus = status
+  })
+
+  // After joining, land on the Activity's heading once it appears.
+  let focusWhenReady = false
+  $effect(() => {
+    if (!focusWhenReady || !view || !connected) return
+    focusWhenReady = false
+    tick().then(() => document.querySelector<HTMLElement>('main h1')?.focus())
+  })
 
   // Facilitator: this browser is the Room.
   $effect(() => {
@@ -63,8 +95,13 @@
 
   function join(event: SubmitEvent) {
     event.preventDefault()
-    if (!name.trim()) return
+    if (!name.trim()) {
+      nameError = 'Enter your name to join'
+      return
+    }
+    nameError = ''
     tap()
+    focusWhenReady = true
     saveDisplayName(name)
     markJoined(roomId)
     joining = true
@@ -75,9 +112,11 @@
     try {
       await navigator.clipboard.writeText(link)
       copied = true
-      setTimeout(() => (copied = false), 1800)
+      announce('Invite link copied')
+      setTimeout(() => (copied = false), 2000)
     } catch {
-      prompt('Copy this link:', link)
+      copyFailed = true
+      alertNow(`Couldn't copy the invite link. It is shown below the header: ${link}`)
     }
   }
 </script>
@@ -85,26 +124,42 @@
 <header class="top">
   <a class="brand" href="#/">Workshop tools</a>
   {#if isFacilitator}
-    <button type="button" class="share" class:copied onclick={share} aria-live="polite">
+    <button type="button" class="share" class:copied onclick={share} aria-label="Copy invite link">
       {#if copied}
-        <svg viewBox="0 0 16 16" class="icon draw"><path d="M3.5 8.5l3 3 6-7" /></svg>
+        <svg viewBox="0 0 16 16" class="icon draw" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>
         Link copied
       {:else}
-        <svg viewBox="0 0 16 16" class="icon"><path d="M8 10V2.5M5 5.5l3-3 3 3M3 9v3.5h10V9" /></svg>
+        <svg viewBox="0 0 16 16" class="icon" aria-hidden="true"><path d="M8 10V2.5M5 5.5l3-3 3 3M3 9v3.5h10V9" /></svg>
         Invite
       {/if}
     </button>
   {/if}
 </header>
 
+{#if copyFailed}
+  <div class="fallback">
+    <label for="invite-link" class="label">Invite link, select and copy it</label>
+    <input id="invite-link" readonly value={link} onfocus={(e) => e.currentTarget.select()} />
+  </div>
+{/if}
+
 {#if !isFacilitator && !joining}
-  <form class="join" onsubmit={join}>
-    <h1>Join the {activityName}</h1>
-    <p class="label">Pick the name your team will see</p>
+  <form class="join" onsubmit={join} novalidate>
+    <h1 tabindex="-1">Join the {activityName}</h1>
+    <label for="join-name" class="label">Your name, as your team will see it</label>
     <div class="row">
-      <input bind:value={name} maxlength={MAX_NAME_LENGTH} placeholder="Your name" aria-label="Your name" required />
-      <button type="submit" disabled={!name.trim()}>Join</button>
+      <input
+        id="join-name"
+        bind:value={name}
+        maxlength={MAX_NAME_LENGTH}
+        autocomplete="nickname"
+        spellcheck="false"
+        aria-invalid={nameError ? 'true' : undefined}
+        aria-describedby={nameError ? 'join-name-error' : undefined}
+      />
+      <button type="submit">Join</button>
     </div>
+    {#if nameError}<p id="join-name-error" class="error">{nameError}</p>{/if}
   </form>
 {:else if !connected && status === 'unreachable'}
   <p class="status error">
@@ -175,7 +230,12 @@
   .join .row {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
+  }
+  .fallback {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
   }
   .join input {
     flex: 1;

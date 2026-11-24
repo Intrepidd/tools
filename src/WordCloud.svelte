@@ -5,6 +5,9 @@
   import Countdown from './Countdown.svelte'
   import Presence from './Presence.svelte'
   import { tap } from './lib/juice'
+  import { announce } from './lib/announcer.svelte'
+  import { cloudSummary } from './lib/roomNews'
+  import { tick } from 'svelte'
   import {
     MAX_ENTRY_LENGTH,
     MAX_ENTRY_WORDS,
@@ -31,30 +34,77 @@
 
   let prompt = $state('')
   let entry = $state('')
-  const valid = $derived(cleanEntry(entry) !== null)
+  let entryError = $state('')
+  let entryInput: HTMLInputElement | undefined = $state()
 
   let counting = $state(false)
+  let focusResults = false
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
   // Play the countdown only when we watched the round go from open to revealed (late joiners skip it).
   let wasOpen: boolean | undefined
   $effect(() => {
     const revealed = round?.revealed
-    if (revealed && wasOpen) counting = true
+    if (revealed && wasOpen) {
+      if (reducedMotion) revealed_()
+      else counting = true
+    }
     wasOpen = round ? !revealed : undefined
   })
+
+  async function focusOn(selector: string) {
+    await tick()
+    document.querySelector<HTMLElement>(selector)?.focus()
+  }
+
+  function reveal() {
+    tap()
+    focusResults = true
+    send({ type: 'reveal' })
+  }
+
+  function revealed_() {
+    counting = false
+    if (round?.cloud) announce(cloudSummary(round.cloud))
+    if (focusResults) {
+      focusResults = false
+      focusOn('#results-heading')
+    }
+  }
 
   function startRound(event: SubmitEvent) {
     event.preventDefault()
     tap()
     send({ type: 'startRound', prompt })
     prompt = ''
+    focusOn('main h1')
   }
 
   function addEntry(event: SubmitEvent) {
     event.preventDefault()
-    if (!valid) return
+    const text = cleanEntry(entry)
+    if (text === null) {
+      entryError = `Use 1 to ${MAX_ENTRY_WORDS} words and at most ${MAX_ENTRY_LENGTH} characters`
+      entryInput?.focus()
+      return
+    }
+    entryError = ''
     tap()
-    send({ type: 'addEntry', text: entry })
+    send({ type: 'addEntry', text })
     entry = ''
+    const n = (round?.myEntries.length ?? 0) + 1
+    announce(`Added ${text}. You have ${n} ${n === 1 ? 'Entry' : 'Entries'}`)
+  }
+
+  /** Delete one of my Entries, then focus the next delete button, else the previous, else the input. */
+  async function remove(index: number) {
+    const mine = round?.myEntries ?? []
+    const gone = mine[index]
+    const next = mine[index + 1] ?? mine[index - 1]
+    send({ type: 'removeEntry', id: gone.id })
+    announce(`Removed ${gone.text}`)
+    await tick()
+    if (next) document.querySelector<HTMLElement>(`[data-entry="${next.id}"]`)?.focus()
+    else entryInput?.focus()
   }
 
 
@@ -72,18 +122,22 @@
 </script>
 
 <section class="cloud">
-  <h1>{round?.prompt || 'Word Cloud'}</h1>
+  <h1 tabindex="-1">{round?.prompt || 'Word Cloud'}</h1>
 
   {#if round && !round.revealed}
-    <form class="composer" onsubmit={addEntry}>
+    <form class="composer" onsubmit={addEntry} novalidate>
+      <label for="entry" class="label">Your Entry</label>
       <input
+        id="entry"
+        bind:this={entryInput}
         bind:value={entry}
-        maxlength={MAX_ENTRY_LENGTH}
-        placeholder="Up to {MAX_ENTRY_WORDS} words"
-        aria-label="Your Entry"
         autocomplete="off"
+        aria-describedby="entry-hint{entryError ? ' entry-error' : ''}"
+        aria-invalid={entryError ? 'true' : undefined}
       />
-      <button type="submit" disabled={!valid}>Add</button>
+      <button type="submit">Add</button>
+      <p id="entry-hint" class="label hint">Up to {MAX_ENTRY_WORDS} words, {MAX_ENTRY_LENGTH} characters. Add as many as you like</p>
+      {#if entryError}<p id="entry-error" class="error">{entryError}</p>{/if}
     </form>
 
     {#if round.myEntries.length}
@@ -99,10 +153,11 @@
             <button
               type="button"
               class="remove"
-              aria-label="Delete {mine.text}"
-              onclick={() => send({ type: 'removeEntry', id: mine.id })}
+              aria-label="Remove {mine.text}"
+              data-entry={mine.id}
+              onclick={() => remove(i)}
             >
-              <svg viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
             </button>
           </li>
         {/each}
@@ -111,30 +166,31 @@
     {/if}
   {:else if round?.revealed}
     {#if counting}
-      <Countdown onDone={() => (counting = false)} />
+      <Countdown onDone={revealed_} />
     {:else if round.cloud?.length}
       <CloudReveal cloud={round.cloud} />
     {:else}
       <p class="status">Nobody added an Entry this round</p>
     {/if}
   {:else if !isFacilitator}
-    <p class="status"><span class="dots"><i></i><i></i><i></i></span> Waiting for the Facilitator to start a round</p>
+    <p class="status"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span> Waiting for the Facilitator to start a round</p>
   {/if}
 
   {#if isFacilitator && round && !round.revealed}
     <div class="control">
       {#key total}<span class="tally"><b>{total}</b> {total === 1 ? 'Entry' : 'Entries'} so far</span>{/key}
-      <button type="button" class="reveal" onclick={() => (tap(), send({ type: 'reveal' }))}>Reveal</button>
+      <button type="button" class="reveal" onclick={reveal}>Reveal</button>
     </div>
   {/if}
 
   {#if isFacilitator && (!round || (round.revealed && !counting))}
     <form class="composer" onsubmit={startRound}>
+      <label for="round-prompt" class="label">{round ? 'Next prompt' : 'Prompt'} (optional)</label>
       <input
+        id="round-prompt"
         bind:value={prompt}
         maxlength={MAX_PROMPT_LENGTH}
-        placeholder={round ? 'Next prompt (optional)' : 'What should people answer? (optional)'}
-        aria-label="Prompt"
+        placeholder="What should people answer?"
       />
       <button type="submit">{round ? 'New round' : 'Start the round'}</button>
     </form>
@@ -153,11 +209,15 @@
     gap: 24px;
   }
   .composer {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
     gap: 8px;
   }
+  .composer label,
+  .composer p {
+    grid-column: 1 / -1;
+  }
   .composer input {
-    flex: 1;
     min-width: 0;
     height: 56px;
     font-size: 18px;
@@ -194,8 +254,8 @@
   .remove {
     display: grid;
     place-items: center;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     border-radius: 6px;
     background: transparent;

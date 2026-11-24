@@ -17,15 +17,31 @@
   )
   // The center counts up once the last Hand has landed.
   const after = $derived(results.hands.length * stagger + 300)
-  const average = new Tween(0, { duration: 900, easing: cubicOut })
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
+  // Starts at 0 and counts up; with reduced motion it jumps straight to the value.
+  const average = new Tween(0, { duration: reducedMotion ? 0 : 900, easing: cubicOut })
+  const byValue = $derived(
+    [1, 2, 3, 4, 5].map((v) => results.hands.filter((h) => h.value === v).map((h) => h.name)),
+  )
   $effect(() => {
     const target = results.average ?? 0
-    const timer = setTimeout(() => average.set(target), after)
+    const timer = setTimeout(() => average.set(target), reducedMotion ? 0 : after)
     return () => clearTimeout(timer)
   })
 </script>
 
-<div class="stage" style:--size={layout.size}>
+<figure class="results" aria-labelledby="results-heading">
+<h2 id="results-heading" tabindex="-1">Results</h2>
+<p class="summary">
+  {#if results.average === null}
+    Nobody answered this Vote
+  {:else}
+    Average {results.average.toFixed(1)} out of 5 from {results.hands.length} {results.hands.length === 1 ? 'vote' : 'votes'}
+  {/if}
+</p>
+
+<!-- The circle is a picture of the table below, so screen readers skip it. -->
+<div class="stage" style:--size={layout.size} aria-hidden="true">
   {#each results.hands as hand, i (hand.key)}
     {@const spot = layout.spots[i]}
     <div
@@ -52,9 +68,9 @@
         <span class="label">average of {results.hands.length}</span>
       </p>
     {/if}
-    <ol class="bars" aria-label="Distribution">
+    <ol class="bars">
       {#each results.distribution as count, i (i)}
-        <li class="v{i + 1}" aria-label="{i + 1}: {count}">
+        <li class="v{i + 1}">
           <span class="count">{count}</span>
           <span class="bar" style:--fill={count / most} style:--i={i}></span>
           <span class="value">{i + 1}</span>
@@ -64,7 +80,54 @@
   </div>
 </div>
 
+<details class="table">
+  <summary>Show the results as a table</summary>
+  <table>
+    <caption class="sr-only">Votes by value</caption>
+    <thead><tr><th scope="col">Value</th><th scope="col">Votes</th><th scope="col">Who</th></tr></thead>
+    <tbody>
+      {#each byValue as names, i (i)}
+        <tr><th scope="row">{i + 1}</th><td>{names.length}</td><td>{names.join(', ') || '–'}</td></tr>
+      {/each}
+    </tbody>
+  </table>
+</details>
+</figure>
+
 <style>
+  .results {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  h2 {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--text-2);
+  }
+  .summary {
+    font-size: 17px;
+  }
+  .table summary {
+    width: fit-content;
+    padding: 8px 0;
+    cursor: pointer;
+    color: var(--text-2);
+  }
+  table {
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  th,
+  td {
+    padding: 8px 16px 8px 0;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+
   .stage {
     position: relative;
     width: min(100%, 78vh);

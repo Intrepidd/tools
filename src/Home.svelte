@@ -6,9 +6,15 @@
   import { participantId, randomId, saveDisplayName, saveRoomState, savedDisplayName } from './lib/storage'
 
   let name = $state(savedDisplayName())
-  const ready = $derived(name.trim() !== '')
+  let nameError = $state('')
+  let nameInput: HTMLInputElement | undefined = $state()
 
   function create(activity: Activity) {
+    if (!name.trim()) {
+      nameError = 'Enter your name first, so your team knows who is asking'
+      nameInput?.focus()
+      return
+    }
     tap()
     const roomId = randomId()
     saveDisplayName(name)
@@ -28,36 +34,47 @@
 <header class="top"><span class="brand">Workshop tools</span></header>
 
 <section class="hero">
-  <h1>Ask your team, then reveal the answers together</h1>
+  <h1 tabindex="-1">Ask your team, then reveal the answers together</h1>
   <p class="sub">Open a Room, share the link, and everyone answers from their own screen. Nothing shows until you say so.</p>
 
-  <label class="name">
-    <span class="label">Your name</span>
-    <input bind:value={name} maxlength={MAX_NAME_LENGTH} placeholder="How the team knows you" />
-  </label>
+  <div class="name">
+    <label for="home-name" class="label">Your name</label>
+    <input
+      id="home-name"
+      bind:this={nameInput}
+      bind:value={name}
+      maxlength={MAX_NAME_LENGTH}
+      autocomplete="nickname"
+      spellcheck="false"
+      placeholder="How the team knows you"
+      aria-invalid={nameError ? 'true' : undefined}
+      aria-describedby={nameError ? 'home-name-error' : undefined}
+      oninput={() => (nameError = '')}
+    />
+    {#if nameError}<p id="home-name-error" class="error">{nameError}</p>{/if}
+  </div>
 
   <div class="cards">
-    <button type="button" class="card fist" disabled={!ready} onclick={() => create('fist')}>
+    <button type="button" class="card fist" aria-describedby="fist-desc" onclick={() => create('fist')}>
       <span class="hands" aria-hidden="true">
         {#each [2, 4, 5, 3] as v, i (i)}
           <span class="mini" style:--c="var(--value-{v})" style:--ink="var(--ink-{v})" style:--i={i}><Hand value={v} /></span>
         {/each}
       </span>
-      <span class="title">Fist of Five</span>
-      <span class="desc">Everyone rates 1 to 5 with a hand, then the hands appear in a circle</span>
+      <span class="title">New Fist of Five</span>
+      <span class="desc" id="fist-desc" aria-hidden="true">Everyone rates 1 to 5 with a hand, then the hands appear in a circle</span>
     </button>
 
-    <button type="button" class="card words" disabled={!ready} onclick={() => create('cloud')}>
+    <button type="button" class="card words" aria-describedby="cloud-desc" onclick={() => create('cloud')}>
       <span class="mini-cloud" aria-hidden="true">
         {#each WORDS as w, i (w.text)}
           <span style:font-size="{w.size}px" style:color="var(--ink-{w.c})" style:--i={i}>{w.text}</span>
         {/each}
       </span>
-      <span class="title">Word Cloud</span>
-      <span class="desc">Everyone adds a few words, then the most common ones grow biggest</span>
+      <span class="title">New Word Cloud</span>
+      <span class="desc" id="cloud-desc" aria-hidden="true">Everyone adds a few words, then the most common ones grow biggest</span>
     </button>
   </div>
-  {#if !ready}<p class="label hint">Type your name to open a Room</p>{/if}
 </section>
 
 <style>
@@ -113,16 +130,13 @@
     padding: 24px;
     border-radius: 24px;
     background: var(--surface);
-    box-shadow: inset 0 0 0 1px var(--line);
+    box-shadow: inset 0 0 0 1px var(--edge);
     color: var(--text);
     text-align: left;
   }
-  .card:not(:disabled):hover {
+  .card:hover {
     transform: translateY(-4px);
-    box-shadow: inset 0 0 0 1px var(--line), 0 16px 32px -20px rgb(31 27 22 / 0.4);
-  }
-  .card:disabled {
-    opacity: 0.55;
+    box-shadow: inset 0 0 0 1px var(--edge), 0 16px 32px -20px rgb(31 27 22 / 0.4);
   }
   .title {
     font-size: 22px;
@@ -148,7 +162,7 @@
     --hand-ink: var(--ink);
     animation: bob 4s ease-in-out calc(var(--i) * -700ms) infinite;
   }
-  .card:not(:disabled):hover .mini {
+  .card:hover .mini {
     animation: wave 600ms var(--spring) calc(var(--i) * 60ms);
   }
   .mini-cloud {
@@ -162,11 +176,8 @@
     transition: transform var(--pop) var(--spring);
     transition-delay: calc(var(--i) * 40ms);
   }
-  .card:not(:disabled):hover .mini-cloud span {
+  .card:hover .mini-cloud span {
     transform: scale(1.12);
-  }
-  .hint {
-    animation: rise 600ms var(--ease) 320ms both;
   }
   @keyframes rise {
     from {

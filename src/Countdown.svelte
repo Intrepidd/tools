@@ -20,7 +20,8 @@
   })
 </script>
 
-<div class="countdown" role="status" aria-live="assertive">
+<!-- Silent for screen readers: the Room announces the Reveal once instead of each tick. -->
+<div class="countdown" aria-hidden="true">
   {#key n}
     {#if n > 0}<span class="digit" style:--c={COLORS[n]}>{n}</span>{/if}
   {/key}

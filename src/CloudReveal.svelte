@@ -9,10 +9,14 @@
   $effect(() => {
     const entries = cloud
     let live = true
-    document.fonts
-      .load(`${CLOUD_WEIGHT} 32px ${CLOUD_FONT}`)
+    Promise.resolve(document.fonts?.load(`${CLOUD_WEIGHT} 32px ${CLOUD_FONT}`))
       .catch(() => {})
-      .then(() => live && (picture = layoutCloud(entries)))
+      .then(() => {
+        // No canvas (e.g. a test DOM) means no picture; the list below still carries everything.
+        try {
+          if (live) picture = layoutCloud(entries)
+        } catch {}
+      })
     return () => (live = false)
   })
 
@@ -20,7 +24,11 @@
   const delay = (i: number) => (i < 3 ? i * 180 : 540 + (i - 3) * Math.min(40, 1400 / cloud.length))
 </script>
 
-<div class="stage">
+<figure class="results" aria-labelledby="results-heading">
+<h2 id="results-heading" tabindex="-1">Results</h2>
+
+<!-- The cloud is a picture of the list below, so screen readers skip it. -->
+<div class="stage" aria-hidden="true">
   {#if picture}
     <svg
       viewBox="{picture.box.x} {picture.box.y} {picture.box.width} {picture.box.height}"
@@ -44,14 +52,42 @@
     </svg>
   {/if}
 
-  <ul class="sr-only">
-    {#each cloud as entry (entry.text)}
-      <li>{entry.text}: {entry.count}</li>
-    {/each}
-  </ul>
 </div>
 
+<details class="list">
+  <summary>Show the Entries as a list, most common first</summary>
+  <ol>
+    {#each cloud as entry (entry.text)}
+      <li>{entry.text}, {entry.count} {entry.count === 1 ? 'time' : 'times'}</li>
+    {/each}
+  </ol>
+</details>
+</figure>
+
 <style>
+  .results {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  h2 {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--text-2);
+  }
+  .list summary {
+    width: fit-content;
+    padding: 8px 0;
+    cursor: pointer;
+    color: var(--text-2);
+  }
+  .list ol {
+    margin: 8px 0 0;
+    padding-left: 24px;
+    line-height: 1.8;
+  }
   .stage {
     min-height: 40vh;
     padding: 32px;

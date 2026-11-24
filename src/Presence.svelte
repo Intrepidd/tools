@@ -8,7 +8,7 @@
   const { people, meKey }: { people: Person[]; meKey?: number } = $props()
 </script>
 
-<ul class="people">
+<ul class="people" aria-label="People in the room, {people.length}">
   {#each people as p, i (p.key)}
     <li
       class="chip"
@@ -22,14 +22,17 @@
       <span class="avatar" aria-hidden="true">
         {initials(p.name)}
         {#if p.done}
-          <svg viewBox="0 0 16 16" class="check"><path d="M4 8.5l2.5 2.5L12 5.5" /></svg>
+          <svg viewBox="0 0 16 16" class="check" aria-hidden="true"><path d="M4 8.5l2.5 2.5L12 5.5" /></svg>
         {/if}
       </span>
       <span class="name">{p.name}</span>
-      {#if p.key === meKey}<span class="tag">you</span>{/if}
-      {#if p.isFacilitator}<span class="tag">facilitator</span>{/if}
+      {#if p.key === meKey}<span class="tag"><span class="sr-only">,</span> you</span>{/if}
+      {#if p.isFacilitator}<span class="tag"><span class="sr-only">,</span> facilitator</span>{/if}
       {#if p.badge !== undefined}
-        {#key p.badge}<span class="badge">{p.badge}</span>{/key}
+        {#key p.badge}<span class="badge" aria-hidden="true">{p.badge}</span>{/key}
+        <span class="sr-only">, {p.badge} {p.badge === 1 ? 'Entry' : 'Entries'}</span>
+      {:else if p.done}
+        <span class="sr-only">, answered</span>
       {/if}
     </li>
   {/each}
