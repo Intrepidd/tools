@@ -57,12 +57,11 @@ const SEED = 20240611
 /** Layout box (in layout units) that shapes the cloud: wider than tall, for a projected screen. */
 const LAYOUT_SIZE: [number, number] = [800, 500]
 /**
- * Arial and Helvetica share their metrics, so this measures the same on most
- * desktops; the layout is only identical where the same font is available.
+ * The app's self-hosted font, so every client measures the same glyphs and gets
+ * the same picture. Callers must wait for it to load before laying out.
  */
-// shortcut: Android has neither (Roboto) so packs a different picture, <upgrade: self-host one font file and measure with it>
-export const CLOUD_FONT = 'Helvetica, Arial, sans-serif'
-export const CLOUD_WEIGHT = 700
+export const CLOUD_FONT = "'Bricolage Grotesque Variable', sans-serif"
+export const CLOUD_WEIGHT = 650
 
 export type PlacedEntry = CloudEntry & { x: number; y: number; size: number }
 export type CloudPicture = { entries: PlacedEntry[]; box: Box }

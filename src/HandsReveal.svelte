@@ -2,13 +2,27 @@
   import Hand from './Hand.svelte'
   import { placeHands } from './lib/handCircle'
   import type { VoteResults } from './room/room'
+  import { Tween } from 'svelte/motion'
+  import { cubicOut } from 'svelte/easing'
 
   const { results }: { results: VoteResults } = $props()
 
   const layout = $derived(placeHands(results.hands.length))
   const most = $derived(Math.max(1, ...results.distribution))
-  // Spread the entrance over at most ~0.8s, however many Hands there are.
-  const stagger = $derived(Math.min(70, 800 / Math.max(1, results.hands.length)))
+  // Spread the entrance over at most ~1.2s, however many Hands there are.
+  const stagger = $derived(Math.min(80, 1200 / Math.max(1, results.hands.length)))
+  // Hands land from the lowest value to the highest, so the picture builds up.
+  const order = $derived(
+    new Map([...results.hands].sort((a, b) => a.value - b.value).map((h, rank) => [h.key, rank])),
+  )
+  // The center counts up once the last Hand has landed.
+  const after = $derived(results.hands.length * stagger + 300)
+  const average = new Tween(0, { duration: 900, easing: cubicOut })
+  $effect(() => {
+    const target = results.average ?? 0
+    const timer = setTimeout(() => average.set(target), after)
+    return () => clearTimeout(timer)
+  })
 </script>
 
 <div class="stage" style:--size={layout.size}>
@@ -18,7 +32,7 @@
       class="hand v{hand.value}"
       style:left="{spot.x}%"
       style:top="{spot.y}%"
-      style:--delay="{i * stagger}ms"
+      style:--delay="{(order.get(hand.key) ?? i) * stagger}ms"
       style:--float-delay="{-((i * 1.7) % 6)}s"
       style:--float-duration="{5 + (i % 3)}s"
     >
@@ -29,12 +43,12 @@
     </div>
   {/each}
 
-  <div class="center">
+  <div class="center" style:--after="{after}ms">
     {#if results.average === null}
       <p class="none">Nobody answered this Vote.</p>
     {:else}
       <p class="average">
-        <span class="number">{results.average.toFixed(1)}</span>
+        <span class="number">{average.current.toFixed(1)}</span>
         <span class="label">average of {results.hands.length}</span>
       </p>
     {/if}
@@ -42,7 +56,7 @@
       {#each results.distribution as count, i (i)}
         <li class="v{i + 1}" aria-label="{i + 1}: {count}">
           <span class="count">{count}</span>
-          <span class="bar" style:--fill={count / most}></span>
+          <span class="bar" style:--fill={count / most} style:--i={i}></span>
           <span class="value">{i + 1}</span>
         </li>
       {/each}
@@ -60,11 +74,11 @@
   }
 
   /* One tint per value, low (warm) to high (the app's green). */
-  .v1 { --c: var(--value-1); }
-  .v2 { --c: var(--value-2); }
-  .v3 { --c: var(--value-3); }
-  .v4 { --c: var(--value-4); }
-  .v5 { --c: var(--value-5); }
+  .v1 { --c: var(--value-1); --ink: var(--ink-1); }
+  .v2 { --c: var(--value-2); --ink: var(--ink-2); }
+  .v3 { --c: var(--value-3); --ink: var(--ink-3); }
+  .v4 { --c: var(--value-4); --ink: var(--ink-4); }
+  .v5 { --c: var(--value-5); --ink: var(--ink-5); }
 
   .hand {
     position: absolute;
@@ -72,9 +86,9 @@
     height: calc(var(--size) * 1cqw);
     margin: 0;
     translate: -50% -50%;
-    --hand-ink: color-mix(in srgb, var(--c) 70%, #222);
-    --hand-fill: color-mix(in srgb, var(--c) 22%, #fff);
-    animation: pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--delay) both;
+    --hand-ink: var(--ink);
+    --hand-fill: var(--c);
+    animation: pop 600ms var(--spring) var(--delay) both;
   }
 
   .float {
@@ -99,7 +113,7 @@
     padding: 0.1em 0.6em;
     border-radius: 999px;
     background: var(--c);
-    color: #fff;
+    color: var(--text);
     font-size: clamp(0.6rem, calc(var(--size) * 0.12cqw), 0.95rem);
     font-weight: 700;
     line-height: 1.4;
@@ -114,7 +128,7 @@
     justify-content: center;
     gap: 3cqw;
     text-align: center;
-    animation: fade 500ms ease-out 200ms both;
+    animation: fade 400ms var(--ease) var(--after) both;
   }
 
   .average {
@@ -131,7 +145,7 @@
   .label {
     margin-top: 0.8cqw;
     font-size: max(0.7rem, 2.3cqw);
-    color: #5c5c58;
+    color: var(--muted);
   }
   .none {
     margin: 0;
@@ -165,10 +179,10 @@
     border-radius: 3px 3px 0 0;
     background: var(--c);
     transform-origin: bottom;
-    animation: grow 600ms cubic-bezier(0.22, 1, 0.36, 1) 400ms both;
+    animation: grow 600ms var(--spring) calc(var(--after) + var(--i) * 70ms) both;
   }
   .count {
-    color: #5c5c58;
+    color: var(--muted);
   }
   .value {
     font-weight: 700;

@@ -1,35 +1,48 @@
 <script lang="ts">
-  import { CLOUD_FONT, CLOUD_WEIGHT, layoutCloud } from './lib/cloudLayout'
+  import { CLOUD_FONT, CLOUD_WEIGHT, layoutCloud, type CloudPicture } from './lib/cloudLayout'
   import type { CloudEntry } from './room/room'
 
   const { cloud }: { cloud: CloudEntry[] } = $props()
 
-  const picture = $derived(layoutCloud(cloud))
-  // Spread the entrance over at most ~0.9s, however many Entries there are.
-  const stagger = $derived(Math.min(80, 900 / Math.max(1, cloud.length)))
+  // Lay out only once the font has loaded, so every screen measures the same glyphs.
+  let picture = $state<CloudPicture | null>(null)
+  $effect(() => {
+    const entries = cloud
+    let live = true
+    document.fonts
+      .load(`${CLOUD_WEIGHT} 32px ${CLOUD_FONT}`)
+      .catch(() => {})
+      .then(() => live && (picture = layoutCloud(entries)))
+    return () => (live = false)
+  })
+
+  // Largest first: the top three land slowly, one by one, then the rest shimmer in (capped ~2s).
+  const delay = (i: number) => (i < 3 ? i * 180 : 540 + (i - 3) * Math.min(40, 1400 / cloud.length))
 </script>
 
 <div class="stage">
-  <svg
-    viewBox="{picture.box.x} {picture.box.y} {picture.box.width} {picture.box.height}"
-    preserveAspectRatio="xMidYMid meet"
-    aria-hidden="true"
-    font-family={CLOUD_FONT}
-    font-weight={CLOUD_WEIGHT}
-  >
-    {#each picture.entries as entry, i (entry.text)}
-      <g transform="translate({entry.x} {entry.y})">
-        <text
-          class="c{i % 5}"
-          font-size={entry.size}
-          text-anchor="middle"
-          style:--delay="{i * stagger}ms"
-        >
-          <title>{entry.text}: {entry.count}</title>{entry.text}
-        </text>
-      </g>
-    {/each}
-  </svg>
+  {#if picture}
+    <svg
+      viewBox="{picture.box.x} {picture.box.y} {picture.box.width} {picture.box.height}"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      font-family={CLOUD_FONT}
+      font-weight={CLOUD_WEIGHT}
+    >
+      {#each picture.entries as entry, i (entry.text)}
+        <g transform="translate({entry.x} {entry.y})">
+          <text
+            style:--c="var(--ink-{(i % 5) + 1})"
+            font-size={entry.size}
+            text-anchor="middle"
+            style:--delay="{delay(i)}ms"
+          >
+            <title>{entry.text}: {entry.count}</title>{entry.text}
+          </text>
+        </g>
+      {/each}
+    </svg>
+  {/if}
 
   <ul class="sr-only">
     {#each cloud as entry (entry.text)}
@@ -40,56 +53,34 @@
 
 <style>
   .stage {
-    margin: 1rem 0;
-    overflow-x: clip; /* the pop-in overshoot must not widen the page */
+    min-height: 40vh;
+    padding: 32px;
+    border-radius: 24px;
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+    overflow: clip; /* the pop-in overshoot must not widen the page */
   }
 
   svg {
     display: block;
     width: 100%;
     height: auto;
-    max-height: 70vh;
+    max-height: 65vh;
     overflow: visible;
   }
 
-  /* The house palette, darkened a little so light tints stay readable on the page. */
-  .c0 { --c: var(--value-5); }
-  .c1 { --c: var(--value-1); }
-  .c2 { --c: var(--value-4); }
-  .c3 { --c: var(--value-2); }
-  .c4 { --c: var(--value-3); }
-
   text {
-    fill: color-mix(in srgb, var(--c) 78%, #222);
+    fill: var(--c);
     transform-box: fill-box;
     transform-origin: center;
-    animation: pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--delay) both;
+    animation: land 700ms var(--spring) var(--delay) both;
   }
 
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  @keyframes pop {
+  @keyframes land {
     from {
       opacity: 0;
-      scale: 0;
-    }
-  }
-  @keyframes fade {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    text {
-      animation: fade 200ms linear both;
+      scale: 0.6;
+      filter: blur(6px);
     }
   }
 </style>

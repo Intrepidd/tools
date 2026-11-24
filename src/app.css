@@ -1,14 +1,56 @@
 :root {
-  /* The five-value house palette, low (warm) to high (the app's green). */
-  --value-1: #e4572e;
-  --value-2: #f3a712;
-  --value-3: #e9c46a;
-  --value-4: #76b041;
-  --value-5: #2a9d8f;
-  font-family: system-ui, sans-serif;
+  /* Paper and felt-tip ink: a warm neutral ramp. */
+  --bg: #faf6f0;
+  --surface: #fffdf9;
+  --raised: #f3ede3;
+  --line: rgb(31 27 22 / 0.09);
+  --text: #1f1b16;
+  --text-2: #5e554a;
+  --muted: #7b7266;
+
+  /* The five-value pastel palette, low (coral) to high (mint), with a deep ink of each for text. */
+  --value-1: #ffb8a8;
+  --value-2: #ffd59e;
+  --value-3: #f9e6a1;
+  --value-4: #cfe8b4;
+  --value-5: #a9dcc9;
+  --ink-1: #b84a35;
+  --ink-2: #b56e14;
+  --ink-3: #94761a;
+  --ink-4: #4f7d32;
+  --ink-5: #2a7c63;
+  /* Extra pastels for people, so avatars don't read as votes. */
+  --pastel-a: #d9cdf5;
+  --pastel-b: #bfdcf6;
+  --pastel-c: #f7c9de;
+
+  /* Motion: one ease-out, one spring with a little overshoot. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --fast: 140ms;
+  --ui: 200ms;
+  --pop: 480ms;
+
+  font-family: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  font-size: 16px;
   line-height: 1.5;
-  color: #1d1d1f;
-  background: #f7f7f5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    --spring: linear(
+      0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159,
+      1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.975 57.1%, 0.997 69.8%,
+      1.003 76.9%, 1
+    );
+  }
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
@@ -16,80 +58,159 @@ body {
 }
 
 main {
-  max-width: 44rem;
+  max-width: 64rem;
   margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
+  padding: 0 24px 96px;
 }
 
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+h1,
+h2 {
+  margin: 0;
   font-weight: 600;
-  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2rem, 4.5vw, 3rem);
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
 }
 
 input {
   font: inherit;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #c8c8c4;
-  border-radius: 6px;
-  background: #fff;
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+input::placeholder {
+  color: var(--muted);
+}
+
+input:focus {
+  outline: none;
+  border-color: rgb(31 27 22 / 0.3);
+  box-shadow: 0 0 0 4px rgb(31 27 22 / 0.06);
 }
 
 button {
   font: inherit;
-  padding: 0.5rem 1rem;
+  font-weight: 500;
+  height: 48px;
+  padding: 0 20px;
   border: 0;
-  border-radius: 6px;
-  background: #2f5d50;
-  color: #fff;
+  border-radius: 12px;
+  background: var(--text);
+  color: var(--surface);
   cursor: pointer;
+  transition:
+    transform var(--pop) var(--spring),
+    background-color var(--fast) var(--ease),
+    opacity var(--fast) var(--ease);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.96);
+  transition-duration: 80ms;
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+button.quiet {
+  background: var(--raised);
+  color: var(--text);
 }
 
-.link {
-  display: flex;
-  gap: 0.5rem;
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
 }
 
-.link input {
-  flex: 1;
-  min-width: 0;
+.label {
+  font-size: 14px;
+  color: var(--text-2);
 }
 
 .status {
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  background: #ecebe6;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: var(--raised);
+  color: var(--text-2);
 }
 
 .status.error {
-  background: #fbe9e7;
+  background: #fde3dc;
+  color: #7a2e1f;
 }
 
-.participants {
-  list-style: none;
-  padding: 0;
+/* Three dots that say "something is about to happen". */
+.dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: dot 1.2s var(--ease) infinite;
+}
+.dots i:nth-child(2) {
+  animation-delay: 150ms;
+}
+.dots i:nth-child(3) {
+  animation-delay: 300ms;
+}
+@keyframes dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
 }
 
-.participants li {
-  padding: 0.4rem 0;
-  border-bottom: 1px solid #e4e3de;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.tag {
-  margin-left: 0.5rem;
-  font-size: 0.8em;
-  color: #5c5c58;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }
