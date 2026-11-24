@@ -7,9 +7,23 @@ export const MAX_SIZE = 96
 /** Smallest font size, so a rare Entry stays readable next to a very popular one. */
 export const MIN_SIZE = 16
 
-/** An Entry's font size: proportional to its count, the top Entry at MAX_SIZE. */
-export function entrySize(entry: CloudEntry, maxCount: number): number {
-  return Math.max(MIN_SIZE, (MAX_SIZE * entry.count) / maxCount)
+/**
+ * Widest an Entry may be drawn, in layout units. d3-cloud rasterizes each Entry
+ * on a 2048px scratch canvas and drops any that don't fit (with padding), so
+ * stay well under it.
+ */
+export const MAX_TEXT_WIDTH = 1600
+
+/**
+ * An Entry's font size: proportional to its count, the top Entry at MAX_SIZE,
+ * then multiplied by `scale` (lowered when a layout is retried). Capped so the
+ * Entry is at most MAX_TEXT_WIDTH wide, assuming no character is wider than
+ * one em (true of Latin text; wider scripts fall back to the retry).
+ */
+export function entrySize(entry: CloudEntry, maxCount: number, scale = 1): number {
+  const bySize = (MAX_SIZE * entry.count) / maxCount
+  const byLength = MAX_TEXT_WIDTH / Math.max(1, entry.text.length)
+  return Math.max(MIN_SIZE, Math.min(bySize, byLength) * scale)
 }
 
 /** mulberry32: a tiny seeded PRNG returning numbers in [0, 1). */
@@ -46,26 +60,43 @@ const LAYOUT_SIZE: [number, number] = [800, 500]
  * Arial and Helvetica share their metrics, so this measures the same on most
  * desktops; the layout is only identical where the same font is available.
  */
+// shortcut: Android has neither (Roboto) so packs a different picture, <upgrade: self-host one font file and measure with it>
 export const CLOUD_FONT = 'Helvetica, Arial, sans-serif'
 export const CLOUD_WEIGHT = 700
 
 export type PlacedEntry = CloudEntry & { x: number; y: number; size: number }
 export type CloudPicture = { entries: PlacedEntry[]; box: Box }
 
+/** Each retry draws every Entry this much smaller. */
+const RETRY_SCALE = 0.7
+const MAX_ATTEMPTS = 4
+
 /**
  * Packs the Cloud with d3-cloud, largest Entry first. Deterministic: the Cloud
  * comes in a stable order (count, then first submission) and placement uses a
  * fixed seed, so the same Cloud gives the same picture on every client. The
- * layout may grow past LAYOUT_SIZE so no Entry is ever dropped; the returned
- * box frames them all, for an SVG viewBox. Needs a canvas (browser only).
+ * layout may grow past LAYOUT_SIZE, and sizes are capped by length, so Entries
+ * fit; if d3-cloud still can't draw or place one (say, an unusually wide
+ * script), the whole layout is retried smaller. Only after MAX_ATTEMPTS is an
+ * Entry left out of the picture (it stays in the screen-reader list). The
+ * returned box frames the placed Entries, for an SVG viewBox. Needs a canvas
+ * (browser only).
  */
 export function layoutCloud(cloud: CloudEntry[]): CloudPicture {
+  let picture = layoutAt(cloud, 1)
+  for (let attempt = 1; attempt < MAX_ATTEMPTS && picture.entries.length < cloud.length; attempt++) {
+    picture = layoutAt(cloud, RETRY_SCALE ** attempt)
+  }
+  return picture
+}
+
+function layoutAt(cloud: CloudEntry[], scale: number): CloudPicture {
   const layout = new CloudLayout().size(LAYOUT_SIZE).overflow(true).random(seededRandom(SEED))
   const maxCount = Math.max(1, ...cloud.map((e) => e.count))
   const entries: PlacedEntry[] = []
   for (const entry of cloud) {
     const sprite = layout.getSprite(entry.text, {
-      size: entrySize(entry, maxCount),
+      size: entrySize(entry, maxCount, scale),
       font: CLOUD_FONT,
       weight: CLOUD_WEIGHT,
       padding: 3,

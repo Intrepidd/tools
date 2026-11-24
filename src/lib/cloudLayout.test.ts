@@ -10,6 +10,18 @@ describe('entrySize', () => {
   it('keeps a rare Entry readable next to a very popular one', () => {
     expect(entrySize({ text: 'Odd one', count: 1 }, 40)).toBe(16)
   })
+
+  it('shrinks a long top Entry so it fits the 2048px canvas d3-cloud draws it on', () => {
+    // Bold 'M' is under one em wide, so 30 of them fit 2048px below 2048 / 30 ≈ 68px.
+    const size = entrySize({ text: 'M'.repeat(30), count: 3 }, 3)
+    expect(size).toBeLessThan(68)
+    expect(size).toBeGreaterThanOrEqual(16)
+  })
+
+  it('scales every size down for a retry, never below the readable minimum', () => {
+    expect(entrySize({ text: 'Trust', count: 10 }, 10, 0.5)).toBe(48)
+    expect(entrySize({ text: 'Odd one', count: 1 }, 40, 0.5)).toBe(16)
+  })
 })
 
 describe('fitBox', () => {
