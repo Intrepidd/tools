@@ -349,6 +349,27 @@ describe('Word Cloud', () => {
     expect(mine(state, 'p-1')).toEqual(['Trust'])
   })
 
+  it("numbers each Participant's Entries on their own, so ids say nothing about anyone else's", () => {
+    let state = openRound()
+    for (const text of ['A', 'B', 'C']) {
+      state = add(state, 'p-1', text)
+      state = add(state, 'p-2', text, text + '2')
+    }
+
+    const ids = (viewer: string) => viewFor(state, viewer).round?.myEntries.map((e) => e.id)
+    expect(ids('p-1')).toEqual([1, 2, 3])
+    expect(ids('p-2')).toEqual([1, 2, 3, 4, 5, 6])
+  })
+
+  it('lets two Participants each delete their own Entry with the same id', () => {
+    let state = add(openRound(), 'p-1', 'Trust')
+    state = add(state, 'p-2', 'Chaos')
+    state = apply(state, { type: 'removeEntry', id: 1 }, 'p-2')
+
+    expect(mine(state, 'p-1')).toEqual(['Trust'])
+    expect(mine(state, 'p-2')).toEqual([])
+  })
+
   const counts = (state: ReturnType<typeof openRound>, viewer: string) =>
     viewFor(state, viewer).round?.progress?.map(({ name, entries }) => ({ name, entries }))
 
@@ -381,7 +402,7 @@ describe('Word Cloud', () => {
     expect(viewFor(state, 'p-2').round?.progress).toBeNull()
   })
 
-  it("never lets any view depend on someone else's words before Reveal", () => {
+  it("never lets any view depend on someone else's Entries before Reveal", () => {
     // Two Rooms where everyone submitted the same number of Entries, with different words.
     const a = add(add(add(openRound(), 'p-1', 'Trust', 'Focus'), FACILITATOR, 'Calm'), 'p-2', 'Chaos')
     const b = add(add(add(openRound(), 'p-1', 'Speed', 'Joy'), FACILITATOR, 'Rain'), 'p-2', 'Chaos')

@@ -39,10 +39,15 @@ type Round = {
   revealed: boolean
   /** In order of submission. Secret until Reveal, except to their author. */
   entries: Entry[]
-  /** The ID the next Entry gets. Never reused within a round. */
-  nextEntryId: number
+  /**
+   * The id each author's next Entry gets, keyed by Participant ID. Counted per
+   * author, so a Participant's ids say nothing about how many Entries others
+   * added. Never reused within a round.
+   */
+  nextEntryIds: Record<string, number>
 }
 
+/** An Entry is identified by (author, id): ids are only unique per author. */
 type Entry = { id: number; author: string; text: string }
 
 type Vote = {
@@ -88,7 +93,7 @@ export type RoomView = {
 export type RoundView = {
   prompt: string
   revealed: boolean
-  /** The viewer's own Entries, in order of submission. `id` is for deleting one. */
+  /** The viewer's own Entries, in order of submission. `id` (1, 2, 3… per author) is for deleting one. */
   myEntries: { id: number; text: string }[]
   /**
    * Facilitator only, before Reveal: how many Entries each person has, never
@@ -271,7 +276,7 @@ function reveal(state: RoomState): RoomState {
 function startRound(state: RoomState, message: { prompt?: unknown }): RoomState {
   if (state.activity !== 'cloud' || (state.round && !state.round.revealed)) return state
   const prompt = typeof message.prompt === 'string' ? message.prompt.trim().slice(0, MAX_PROMPT_LENGTH) : ''
-  return { ...state, round: { prompt, revealed: false, entries: [], nextEntryId: 0 } }
+  return { ...state, round: { prompt, revealed: false, entries: [], nextEntryIds: {} } }
 }
 
 function addEntry(state: RoomState, message: { text?: unknown }, from: string): RoomState {
@@ -279,8 +284,9 @@ function addEntry(state: RoomState, message: { text?: unknown }, from: string): 
   if (!round || round.revealed || !state.participants[from]) return state
   const text = cleanEntry(message.text)
   if (text === null) return state
-  const entry = { id: round.nextEntryId, author: from, text }
-  return { ...state, round: { ...round, entries: [...round.entries, entry], nextEntryId: round.nextEntryId + 1 } }
+  const id = round.nextEntryIds[from] ?? 1
+  const entries = [...round.entries, { id, author: from, text }]
+  return { ...state, round: { ...round, entries, nextEntryIds: { ...round.nextEntryIds, [from]: id + 1 } } }
 }
 
 function removeEntry(state: RoomState, message: { id?: unknown }, from: string): RoomState {
