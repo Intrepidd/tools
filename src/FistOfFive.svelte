@@ -1,4 +1,5 @@
 <script lang="ts">
+  import HandsReveal from './HandsReveal.svelte'
   import type { Message, VoteView } from './room/room'
 
   const { vote, isFacilitator, send }: { vote: VoteView | null; isFacilitator: boolean; send: (m: Message) => void } =
@@ -40,24 +41,7 @@
         <p class="status">Values stay hidden until the Facilitator reveals them.</p>
       {/if}
     {:else if vote.results}
-      {@const { hands, average, distribution } = vote.results}
-      {#if hands.length === 0}
-        <p>Nobody answered this Vote.</p>
-      {:else}
-        <p class="average">Average: <strong>{average?.toFixed(1)}</strong></p>
-        <ul class="hands">
-          {#each hands as hand (hand.id)}
-            <li>{hand.name}: <strong>{hand.value}</strong></li>
-          {/each}
-        </ul>
-      {/if}
-      <table class="distribution">
-        <tbody>
-          {#each distribution as count, i (i)}
-            <tr><th>{i + 1}</th><td>{count}</td></tr>
-          {/each}
-        </tbody>
-      </table>
+      <HandsReveal results={vote.results} />
     {/if}
   {:else if !isFacilitator}
     <p class="status">Waiting for the Facilitator to start a Vote…</p>
@@ -90,9 +74,5 @@
     background: #2f5d50;
     color: #fff;
     border-color: #2f5d50;
-  }
-  .distribution th {
-    text-align: right;
-    padding-right: 0.75rem;
   }
 </style>
