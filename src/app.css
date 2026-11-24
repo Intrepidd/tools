@@ -1,0 +1,89 @@
+:root {
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+  color: #1d1d1f;
+  background: #f7f7f5;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+input {
+  font: inherit;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #c8c8c4;
+  border-radius: 6px;
+  background: #fff;
+}
+
+button {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  background: #2f5d50;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.link {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.link input {
+  flex: 1;
+  min-width: 0;
+}
+
+.status {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  background: #ecebe6;
+}
+
+.status.error {
+  background: #fbe9e7;
+}
+
+.participants {
+  list-style: none;
+  padding: 0;
+}
+
+.participants li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #e4e3de;
+}
+
+.tag {
+  margin-left: 0.5rem;
+  font-size: 0.8em;
+  color: #5c5c58;
+}
