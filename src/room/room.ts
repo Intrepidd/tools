@@ -11,14 +11,18 @@
 export type Activity = 'fist' | 'cloud'
 
 export const MAX_NAME_LENGTH = 40
+export const MAX_QUESTION_LENGTH = 200
 
-type Member = { name: string; connected: boolean }
+/** The values a Hand can show, in order. */
+export const HAND_VALUES = [1, 2, 3, 4, 5] as const
+
+type Participant = { name: string; connected: boolean }
 
 export type RoomState = {
   activity: Activity
   facilitatorId: string
   /** Everyone who ever joined, keyed by Participant ID. Kept after they leave. */
-  members: Record<string, Member>
+  participants: Record<string, Participant>
   /** Participant IDs in order of first join. */
   order: string[]
   /** The current Fist of Five Vote, or null before the first one. */
@@ -41,7 +45,11 @@ export type FistMessage =
 
 export type Message = PresenceMessage | FistMessage
 
-export type ParticipantView = { id: string; name: string; isFacilitator: boolean }
+/**
+ * A person as others see them. `key` is opaque and only meaningful within this
+ * Room: it is never a Participant ID, so it can't be replayed to speak as them.
+ */
+export type ParticipantView = { key: number; name: string; isFacilitator: boolean }
 
 export type RoomView = {
   activity: Activity
@@ -64,7 +72,8 @@ export type VoteView = {
   results: VoteResults | null
 }
 
-export type Hand = { id: string; name: string; value: number }
+/** `key` matches the Participant's key in `RoomView.participants`. */
+export type Hand = { key: number; name: string; value: number }
 
 export type VoteResults = {
   /** One Hand per Participant who answered, in order of first join. */
@@ -79,7 +88,7 @@ export function createRoom(activity: Activity, facilitatorId: string, facilitato
   return {
     activity,
     facilitatorId,
-    members: { [facilitatorId]: { name: cleanName(facilitatorName) || 'Facilitator', connected: true } },
+    participants: { [facilitatorId]: { name: cleanName(facilitatorName) || 'Facilitator', connected: true } },
     order: [facilitatorId],
     vote: null,
   }
@@ -110,8 +119,8 @@ export function viewFor(state: RoomState, participantId: string): RoomView {
   const person = personIn(state)
   return {
     activity: state.activity,
-    me: state.members[participantId] ? person(participantId) : null,
-    participants: state.order.filter((id) => state.members[id].connected).map(person),
+    me: state.participants[participantId] ? person(participantId) : null,
+    participants: state.order.filter((id) => state.participants[id].connected).map(person),
     vote: state.vote ? voteView(state, state.vote, participantId) : null, // absent in Rooms saved before Votes existed
   }
 }
@@ -124,7 +133,7 @@ function voteView(state: RoomState, vote: Vote, viewer: string): VoteView {
       ? {
           answered: state.order.filter(hasAnswered).map(person),
           waitingOn: state.order
-            .filter((id) => id !== state.facilitatorId && state.members[id].connected && !hasAnswered(id))
+            .filter((id) => id !== state.facilitatorId && state.participants[id].connected && !hasAnswered(id))
             .map(person),
         }
       : null
@@ -140,16 +149,16 @@ function voteView(state: RoomState, vote: Vote, viewer: string): VoteView {
 function results(state: RoomState, vote: Vote): VoteResults {
   const hands = state.order
     .filter((id) => id in vote.answers)
-    .map((id) => ({ id, name: state.members[id].name, value: vote.answers[id] }))
-  const distribution = [1, 2, 3, 4, 5].map((n) => hands.filter((h) => h.value === n).length)
+    .map((id) => ({ key: state.order.indexOf(id), name: state.participants[id].name, value: vote.answers[id] }))
+  const distribution = HAND_VALUES.map((n) => hands.filter((h) => h.value === n).length)
   const average = hands.length ? hands.reduce((sum, h) => sum + h.value, 0) / hands.length : null
   return { hands, average, distribution }
 }
 
 function personIn(state: RoomState) {
   return (id: string): ParticipantView => ({
-    id,
-    name: state.members[id].name,
+    key: state.order.indexOf(id), // position of first join: stable, and says nothing about the ID
+    name: state.participants[id].name,
     isFacilitator: id === state.facilitatorId,
   })
 }
@@ -157,16 +166,20 @@ function personIn(state: RoomState) {
 /** Opens a Vote, or a New Vote that replaces a revealed one. */
 function startVote(state: RoomState, message: { question?: unknown }): RoomState {
   if (state.activity !== 'fist' || (state.vote && !state.vote.revealed)) return state
-  const question = typeof message.question === 'string' ? message.question.trim() : ''
+  const question = typeof message.question === 'string' ? message.question.trim().slice(0, MAX_QUESTION_LENGTH) : ''
   return { ...state, vote: { question, revealed: false, answers: {} } }
 }
 
 function answer(state: RoomState, message: { value?: unknown }, from: string): RoomState {
   const { vote } = state
   const { value } = message
-  if (!vote || vote.revealed || !state.members[from]) return state
-  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 5) return state
+  if (!vote || vote.revealed || !state.participants[from]) return state
+  if (!isHandValue(value)) return state
   return { ...state, vote: { ...vote, answers: { ...vote.answers, [from]: value } } }
+}
+
+function isHandValue(value: unknown): value is number {
+  return (HAND_VALUES as readonly unknown[]).includes(value)
 }
 
 function join(state: RoomState, message: { name: unknown }, from: string): RoomState {
@@ -175,15 +188,15 @@ function join(state: RoomState, message: { name: unknown }, from: string): RoomS
   if (!name) return state
   return {
     ...state,
-    members: { ...state.members, [from]: { name, connected: true } },
+    participants: { ...state.participants, [from]: { name, connected: true } },
     order: state.order.includes(from) ? state.order : [...state.order, from],
   }
 }
 
 function leave(state: RoomState, from: string): RoomState {
-  const member = state.members[from]
-  if (!member) return state
-  return { ...state, members: { ...state.members, [from]: { ...member, connected: false } } }
+  const participant = state.participants[from]
+  if (!participant) return state
+  return { ...state, participants: { ...state.participants, [from]: { ...participant, connected: false } } }
 }
 
 function cleanName(name: string): string {

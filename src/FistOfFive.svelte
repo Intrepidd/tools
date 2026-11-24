@@ -1,6 +1,6 @@
 <script lang="ts">
   import HandsReveal from './HandsReveal.svelte'
-  import type { Message, VoteView } from './room/room'
+  import { HAND_VALUES, MAX_QUESTION_LENGTH, type Message, type VoteView } from './room/room'
 
   const { vote, isFacilitator, send }: { vote: VoteView | null; isFacilitator: boolean; send: (m: Message) => void } =
     $props()
@@ -23,7 +23,7 @@
     {#if !vote.revealed}
       <p>How confident are you? Pick 1 (not at all) to 5 (fully). You can change it until the Reveal.</p>
       <div class="values" role="group" aria-label="Your value">
-        {#each [1, 2, 3, 4, 5] as value (value)}
+        {#each HAND_VALUES as value (value)}
           <button
             type="button"
             class:picked={vote.myValue === value}
@@ -51,7 +51,7 @@
     <form onsubmit={startVote}>
       <label>
         Question (optional)
-        <input bind:value={question} maxlength="200" placeholder="e.g. How confident are we in this plan?" />
+        <input bind:value={question} maxlength={MAX_QUESTION_LENGTH} placeholder="e.g. How confident are we in this plan?" />
       </label>
       <button type="submit">{vote ? 'New Vote' : 'Start a Vote'}</button>
     </form>

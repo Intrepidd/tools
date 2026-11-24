@@ -1,4 +1,5 @@
 import { joinRoom } from 'trystero'
+import { bindPeer, unbindPeer, type PeerBindings } from './peers'
 import { apply, viewFor, type Message, type RoomState, type RoomView } from './room'
 
 // Star topology over Trystero (Nostr signaling), see ADR 0001.
@@ -29,9 +30,9 @@ export type Hub = {
 }
 
 /** Run the Room as its Facilitator. `onChange` fires with every new state. */
-export function hostRoom(roomId: string, initial: RoomState, onChange: (state: RoomState) => void): Hub {
+export function runRoomAsFacilitator(roomId: string, initial: RoomState, onChange: (state: RoomState) => void): Hub {
   const { room, hello, toHub, view } = connect(roomId)
-  const peers = new Map<string, string>() // Trystero peer ID -> Participant ID
+  let peers: PeerBindings = new Map()
 
   // After a Facilitator refresh nobody is connected yet; they come back on their own.
   let state = initial.order
@@ -52,18 +53,21 @@ export function hostRoom(roomId: string, initial: RoomState, onChange: (state: R
 
   toHub.onMessage((data, { peerId }) => {
     if (typeof data !== 'object' || data === null || typeof data.participantId !== 'string') return
-    const known = peers.get(peerId)
-    if (known && known !== data.participantId) return // a peer can't speak for someone else
-    peers.set(peerId, data.participantId)
+    const bound = bindPeer(peers, peerId, data.participantId, state.facilitatorId)
+    if (!bound) return // a peer can't speak for the Facilitator, or for anyone else already here
+    peers = bound
     update(apply(state, data.message, data.participantId))
   })
 
   room.onPeerLeave(({ peerId }) => {
-    const participantId = peers.get(peerId)
-    if (!participantId) return
-    peers.delete(peerId)
-    const stillHere = [...peers.values()].includes(participantId) // e.g. same person, two tabs
-    if (!stillHere) update(apply(state, { type: 'leave' }, participantId))
+    const left = unbindPeer(peers, peerId)
+    peers = left.bindings
+    if (left.participantId) update(apply(state, { type: 'leave' }, left.participantId))
+    // A refreshing Participant's new peer is refused until their old peer is seen leaving,
+    // so greet every peer not yet bound again: they answer by joining once more.
+    for (const other of Object.keys(room.getPeers())) {
+      if (!peers.has(other)) void hello.send({ hub: true }, { target: other })
+    }
   })
 
   return {
@@ -94,7 +98,11 @@ export function joinAsParticipant(
   onStatus('connecting')
   const timer = setTimeout(() => onStatus('unreachable'), HUB_TIMEOUT_MS)
 
+  // shortcut: whoever says hello first is trusted as the Room, so a malicious peer
+  // that beats the Facilitator to it can pose as the Room. Upgrade path: the
+  // Facilitator signs hello with a key whose fingerprint is in the Room URL.
   hello.onMessage((_, { peerId }) => {
+    if (hubPeerId && hubPeerId !== peerId) return // only a new hub after the old one left (Facilitator refresh)
     hubPeerId = peerId
     void toHub.send({ participantId, message: { type: 'join', name } }, { target: peerId })
   })

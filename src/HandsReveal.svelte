@@ -12,7 +12,7 @@
 </script>
 
 <div class="stage" style:--size={layout.size}>
-  {#each results.hands as hand, i (hand.id)}
+  {#each results.hands as hand, i (hand.key)}
     {@const spot = layout.spots[i]}
     <div
       class="hand v{hand.value}"

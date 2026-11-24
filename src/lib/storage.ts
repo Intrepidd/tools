@@ -8,8 +8,8 @@ const DISPLAY_NAME = 'workshop:displayName'
 const roomKey = (roomId: string) => `workshop:room:${roomId}`
 const joinedKey = (roomId: string) => `workshop:joined:${roomId}`
 
-export function randomId(bytes = 16): string {
-  const buf = crypto.getRandomValues(new Uint8Array(bytes))
+export function randomId(): string {
+  const buf = crypto.getRandomValues(new Uint8Array(16))
   return Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
@@ -54,7 +54,8 @@ export function loadRoomState(roomId: string): RoomState | null {
   const raw = read(localStorage, roomKey(roomId))
   if (!raw) return null
   try {
-    return JSON.parse(raw) as RoomState
+    const state = JSON.parse(raw) as RoomState
+    return state?.participants ? state : null // Rooms saved before `members` was renamed
   } catch {
     return null
   }

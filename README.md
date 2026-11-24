@@ -19,8 +19,9 @@ To try a Room, open the app, create a Room, and open the join link in another br
 
 ## Layout
 
-- `src/room/room.ts`: the pure Room core, `apply(roomState, message, fromParticipantId)` and `viewFor(roomState, participantId)`. The only tested seam.
-- `src/room/connection.ts`: the Trystero star. The Facilitator hosts; Participants send only to the Facilitator and receive only their own view.
+- `src/room/room.ts`: the pure Room core, `apply(roomState, message, fromParticipantId)` and `viewFor(roomState, participantId)`. Tested.
+- `src/room/peers.ts`: the hub's pure binding of each Trystero peer to one Participant ID. Tested.
+- `src/room/connection.ts`: the Trystero star. The Facilitator's browser is the hub and runs the Room; Participants send only to it and receive only their own view, where other people appear under opaque keys, never their Participant IDs.
 - `src/*.svelte`: UI. Routing is by hash: `#/fist/<roomId>`, `#/cloud/<roomId>`.
 
 ## Deploy

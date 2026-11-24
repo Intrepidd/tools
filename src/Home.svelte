@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createRoom, type Activity } from './room/room'
+  import { MAX_NAME_LENGTH, createRoom, type Activity } from './room/room'
   import { ACTIVITY_NAMES, roomHash } from './lib/route'
   import { participantId, randomId, saveDisplayName, saveRoomState, savedDisplayName } from './lib/storage'
 
@@ -19,7 +19,7 @@
 <form onsubmit={(e) => e.preventDefault()}>
   <label>
     Your display name
-    <input bind:value={name} maxlength="40" placeholder="e.g. Alex" required />
+    <input bind:value={name} maxlength={MAX_NAME_LENGTH} placeholder="e.g. Alex" required />
   </label>
   <div class="actions">
     {#each Object.entries(ACTIVITY_NAMES) as [activity, label] (activity)}

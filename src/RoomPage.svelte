@@ -1,8 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { viewFor, type Activity, type Message, type RoomView } from './room/room'
+  import { MAX_NAME_LENGTH, viewFor, type Activity, type Message, type RoomView } from './room/room'
   import FistOfFive from './FistOfFive.svelte'
-  import { hostRoom, joinAsParticipant, type ParticipantStatus } from './room/connection'
+  import { runRoomAsFacilitator, joinAsParticipant, type ParticipantStatus } from './room/connection'
   import { ACTIVITY_NAMES, roomLink } from './lib/route'
   import {
     hasJoined,
@@ -34,7 +34,7 @@
   // Facilitator: this browser is the Room.
   $effect(() => {
     if (!isFacilitator || !stored) return
-    const hub = hostRoom(roomId, stored, (state) => {
+    const hub = runRoomAsFacilitator(roomId, stored, (state) => {
       saveRoomState(roomId, state)
       view = viewFor(state, myId)
     })
@@ -90,7 +90,7 @@
   <form onsubmit={join}>
     <label>
       Your display name
-      <input bind:value={name} maxlength="40" placeholder="e.g. Alex" required />
+      <input bind:value={name} maxlength={MAX_NAME_LENGTH} placeholder="e.g. Alex" required />
     </label>
     <button type="submit" disabled={!name.trim()}>Join the Room</button>
   </form>
@@ -111,11 +111,11 @@
   <section>
     <h2>Here now ({view.participants.length})</h2>
     <ul class="participants">
-      {#each view.participants as person (person.id)}
+      {#each view.participants as person (person.key)}
         <li>
           {person.name}
           {#if person.isFacilitator}<span class="tag">Facilitator</span>{/if}
-          {#if person.id === view.me?.id}<span class="tag">you</span>{/if}
+          {#if person.key === view.me?.key}<span class="tag">you</span>{/if}
         </li>
       {/each}
     </ul>
