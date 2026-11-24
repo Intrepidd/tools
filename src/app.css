@@ -148,8 +148,11 @@ button.quiet {
   outline-offset: 2px;
 }
 
-/* Headings get focus programmatically after a view change; no ring for that. */
-[tabindex='-1']:focus:not(:focus-visible) {
+/* Headings get focus programmatically after a view change or a reveal, so screen readers
+   start there. They are not in the tab order and do nothing when activated, so no ring.
+   `:focus-visible` alone is not enough: after a keyboard action (Enter in a form) browsers
+   also match it on a scripted focus. Only headings use tabindex="-1" (docs/accessibility.md). */
+:is(h1, h2)[tabindex='-1']:focus {
   outline: none;
 }
 

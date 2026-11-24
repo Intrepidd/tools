@@ -27,7 +27,7 @@ A member of our team is blind and uses a screen reader. Every screen, Activity a
 ### Visual
 13. Text 4.5:1, large text and control boundaries, focus rings, selected states and chart marks 3:1 against what is next to them. Pastels are fills behind dark text only, never text on paper. Check new colours with a contrast checker before adding them; `src/app.css` records the ratios.
 14. State is never shown by colour alone: a selected value also gets a check mark and a thick dark border.
-15. Focus ring: 3px solid `--text` outline, offset 2px (`outline`, not `box-shadow`, so it survives forced colours).
+15. Focus ring: 3px solid `--text` outline, offset 2px (`outline`, not `box-shadow`, so it survives forced colours). Headings focused by script (`tabindex="-1"`) get no ring, even after a keyboard action: they are not operable and not in the tab order. Never put `tabindex="-1"` on an interactive element to hide its ring.
 16. Targets at least 24×24 CSS px, 44×44 where it's cheap.
 17. Under `prefers-reduced-motion`, skip the countdown, count-up and confetti and show final states. Haptics and confetti are extra feedback only, never the only signal.
 
