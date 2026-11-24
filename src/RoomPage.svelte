@@ -2,6 +2,7 @@
   import { untrack } from 'svelte'
   import { MAX_NAME_LENGTH, viewFor, type Activity, type Message, type RoomView } from './room/room'
   import FistOfFive from './FistOfFive.svelte'
+  import WordCloud from './WordCloud.svelte'
   import { runRoomAsFacilitator, joinAsParticipant, type ParticipantStatus } from './room/connection'
   import { ACTIVITY_NAMES, roomLink } from './lib/route'
   import {
@@ -105,6 +106,8 @@
 
 {#if view?.activity === 'fist' && (isFacilitator || status === 'connected')}
   <FistOfFive vote={view.vote} {isFacilitator} send={(m) => send(m)} />
+{:else if view?.activity === 'cloud' && (isFacilitator || status === 'connected')}
+  <WordCloud round={view.round} {isFacilitator} send={(m) => send(m)} />
 {/if}
 
 {#if view}
