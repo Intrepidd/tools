@@ -27,6 +27,8 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npm run build
+        env:
+          VITE_ICE_SERVERS: ${{ secrets.ICE_SERVERS }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -1,4 +1,5 @@
 import { joinRoom } from 'trystero'
+import { parseIceServers } from './iceServers'
 import { bindPeer, unbindPeer, type PeerBindings } from './peers'
 import { apply, viewFor, type Message, type RoomState, type RoomView } from './room'
 
@@ -10,11 +11,16 @@ import { apply, viewFor, type Message, type RoomState, type RoomView } from './r
 const APP_ID = 'intrepidd-workshop-tools'
 const HUB_TIMEOUT_MS = 15_000
 
+// Added to Trystero's default STUN servers; unset means STUN only.
+const turnConfig = parseIceServers(import.meta.env.VITE_ICE_SERVERS)
+
 type Envelope = { participantId: string; message: Message }
 type Hello = { hub: true }
 
 function connect(roomId: string) {
-  const room = joinRoom({ appId: APP_ID }, roomId)
+  const room = joinRoom({ appId: APP_ID, turnConfig }, roomId)
+  // Connection failures are otherwise silent: log them so they can be diagnosed.
+  room.onError((error) => console.warn(`[room] ${error.code}: ${error.message}`, error))
   return {
     room,
     hello: room.makeAction<Hello>('hello'),
